@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 )
 
 func main() {
@@ -12,12 +14,28 @@ func main() {
 		port = "8080"
 	}
 
+	delay := os.Getenv("STARTUP_DELAY")
+	if delay == "" {
+		delay = "0"
+	}
+
+	d, err := strconv.Atoi(delay)
+	if err != nil {
+		log.Println("'STARTUP_DELAY' should be numeric string in seconds, defaulting to '0'")
+		d = 0
+	}
+
+	if d > 0 {
+		log.Printf("Waiting for '%v' seconds startup delay", d)
+	}
+	time.Sleep(time.Duration(d) * time.Second)
+
 	router := http.NewServeMux()
 	router.HandleFunc("/health", healthHandler)
 	router.HandleFunc("/hello", helloHandler)
 
 	log.Printf("Listening on :%v\n", port)
-	err := http.ListenAndServe(":"+port, router)
+	err = http.ListenAndServe(":"+port, router)
 	if err != nil {
 		log.Fatal(err)
 	}
