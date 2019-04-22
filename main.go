@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var startServing time.Time
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -28,10 +30,12 @@ func main() {
 	if d > 0 {
 		log.Printf("Waiting for '%v' seconds startup delay", d)
 	}
-	time.Sleep(time.Duration(d) * time.Second)
+
+	startServing = time.Now().Add(time.Duration(d) * time.Second)
 
 	router := http.NewServeMux()
 	router.HandleFunc("/health", healthHandler)
+	router.HandleFunc("/ready", readyHandler)
 	router.HandleFunc("/hello", helloHandler)
 
 	log.Printf("Listening on :%v\n", port)
@@ -42,13 +46,45 @@ func main() {
 }
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
-	_, err := w.Write([]byte("Hello, World!"))
-	if err != nil {
-		log.Fatal(err)
+	var statusCode int
+	if canServe() {
+		statusCode = 200
+		_, err := w.Write([]byte("Hello, World!"))
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		statusCode = 400
 	}
+	w.WriteHeader(statusCode)
+	log.Println("Hello request:", statusCode)
+
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
+	var statusCode int
+
+	if canServe() {
+		statusCode = 200
+	} else {
+		statusCode = 400
+	}
+	w.WriteHeader(statusCode)
+	log.Println("Health request:", statusCode)
+}
+
+func readyHandler(w http.ResponseWriter, r *http.Request) {
+	var statusCode int
+
+	if canServe() {
+		statusCode = 200
+	} else {
+		statusCode = 400
+	}
+	w.WriteHeader(statusCode)
+	log.Println("Ready request:", statusCode)
+}
+
+func canServe() bool {
+	return time.Now().After(startServing)
 }

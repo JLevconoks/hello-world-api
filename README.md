@@ -1,6 +1,6 @@
 A simple Hello, World! API for some experiments with Kubernetes.
 
-Endpoints "/health" and "/hello".
+Endpoints "/health", "/ready/ and "/hello".
 
 Startup delay and port can be configured via enviroment variables:
 - `STARTUP_DELAY` in seconds, defaults to 0
